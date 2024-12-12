@@ -1,21 +1,17 @@
-package pl.edu.agh.kis.lab.pz1;
+package pl.edu.agh.kis.lab.pz1.GameLogic;
 
-import lombok.Data;
 
-@Data
-public class Card {
+public record Card(Card.Rank rank, Card.Suit suit) {
     public enum Suit {
         CLUBS, DIAMONDS, HEARTS, SPADES
     }
+
     public enum Rank {
         TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN,
         JACK, QUEEN, KING, ACE
     }
 
-    private final Rank rank;
-    private final Suit suit;
-
-    public String toString(){
+    public String toString() {
         return rank + " OF " + suit;
     }
 }
