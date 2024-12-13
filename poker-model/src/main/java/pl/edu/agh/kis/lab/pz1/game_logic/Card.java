@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.lab.pz1.GameLogic;
+package pl.edu.agh.kis.lab.pz1.game_logic;
 
 
 public record Card(Card.Rank rank, Card.Suit suit) {

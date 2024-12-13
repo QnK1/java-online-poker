@@ -1,9 +1,10 @@
-package pl.edu.agh.kis.lab.pz1.GameLogic;
+package pl.edu.agh.kis.lab.pz1.game_logic;
 
-import pl.edu.agh.kis.lab.pz1.GameExceptions.DeckIsEmptyException;
+import pl.edu.agh.kis.lab.pz1.game_exceptions.DeckIsEmptyException;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class Deck extends AbstractDeck {
     public Deck() {
@@ -28,6 +29,19 @@ public class Deck extends AbstractDeck {
         }
 
         return cards.remove(0);
+    }
+
+    public List<Card> popCards(int n) throws DeckIsEmptyException {
+        List<Card> cardsToPop = new ArrayList<>();
+        for(int i = 0; i<n; i++){
+            cardsToPop.add(popCard());
+        }
+
+        return cardsToPop;
+    }
+
+    public int getSize(){
+        return cards.size();
     }
 
 }
