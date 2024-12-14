@@ -1,10 +1,7 @@
-package pl.edu.agh.kis.lab.pz1;
+package pl.edu.agh.kis.lab.pz1.game_logic;
 
 import org.junit.Test;
 import pl.edu.agh.kis.lab.pz1.game_exceptions.IncorrectCardComboException;
-import pl.edu.agh.kis.lab.pz1.game_logic.Card;
-import pl.edu.agh.kis.lab.pz1.game_logic.CardCombo;
-import pl.edu.agh.kis.lab.pz1.game_logic.ComboType;
 
 import java.util.ArrayList;
 import java.util.List;
