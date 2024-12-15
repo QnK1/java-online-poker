@@ -2,6 +2,8 @@ package pl.edu.agh.kis.lab.pz1.game_logic;
 
 import org.junit.Before;
 import org.junit.Test;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.Card;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.Hand;
 
 import java.util.ArrayList;
 import java.util.Arrays;

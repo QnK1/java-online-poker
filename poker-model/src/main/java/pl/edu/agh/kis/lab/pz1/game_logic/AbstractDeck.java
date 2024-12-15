@@ -1,5 +1,7 @@
 package pl.edu.agh.kis.lab.pz1.game_logic;
 
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.Card;
+
 import java.util.List;
 
 public abstract class AbstractDeck {

@@ -1,5 +1,5 @@
 package pl.edu.agh.kis.lab.pz1.game_logic;
 
-public interface DeckFactory {
+public interface AbstractDeckFactory {
     AbstractDeck getDeck();
 }

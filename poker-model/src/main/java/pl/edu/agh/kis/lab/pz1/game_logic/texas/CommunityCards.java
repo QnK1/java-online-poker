@@ -1,11 +1,15 @@
-package pl.edu.agh.kis.lab.pz1.game_logic;
+package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 
 
+import lombok.Getter;
+import lombok.Setter;
 import pl.edu.agh.kis.lab.pz1.game_exceptions.TooFewHiddenCardsException;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 public class CommunityCards{
     private List<Card> hiddenCards;
     private List<Card> visibleCards;
@@ -45,11 +49,4 @@ public class CommunityCards{
         }
     }
 
-    public List<Card> getHiddenCards(){
-        return hiddenCards;
-    }
-
-    public List<Card> getVisibleCards(){
-        return visibleCards;
-    }
 }

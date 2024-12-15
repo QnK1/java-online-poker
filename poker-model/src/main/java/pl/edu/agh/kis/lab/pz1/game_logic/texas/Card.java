@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.lab.pz1.game_logic;
+package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 
 
 public record Card(Card.Rank rank, Card.Suit suit) implements Comparable<Card> {

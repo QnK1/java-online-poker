@@ -1,6 +1,7 @@
 package pl.edu.agh.kis.lab.pz1.game_logic;
 
 import org.junit.Test;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +9,88 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 public class ClassicHandRankerTest {
+
+    @Test
+    public void pickWinnerTiebreakerTest(){
+        ClassicHandRanker ranker = new ClassicHandRanker();
+
+        Player p1 = new Player();
+        Player p2 = new Player();
+
+        Hand h1 = new Hand();
+        Hand h2 = new Hand();
+
+        List<Card> c1 = new ArrayList<>();
+        List<Card> c2 = new ArrayList<>();
+        List<Card> cc = new ArrayList<>();
+
+        CommunityCards communityCards = new CommunityCards();
+
+        cc.add(new Card(Card.Rank.ACE, Card.Suit.HEARTS));
+        cc.add(new Card(Card.Rank.ACE, Card.Suit.SPADES));
+        cc.add(new Card(Card.Rank.ACE, Card.Suit.CLUBS));
+        cc.add(new Card(Card.Rank.ACE, Card.Suit.DIAMONDS));
+        cc.add(new Card(Card.Rank.TWO, Card.Suit.HEARTS));
+
+        c1.add(new Card(Card.Rank.TWO, Card.Suit.SPADES));
+        c1.add(new Card(Card.Rank.FOUR, Card.Suit.CLUBS));
+
+        c2.add(new Card(Card.Rank.TWO, Card.Suit.SPADES));
+        c2.add(new Card(Card.Rank.FIVE, Card.Suit.CLUBS));
+
+        h1.setCards(c1);
+        h2.setCards(c2);
+        p1.setHand(h1);
+        p2.setHand(h2);
+
+        communityCards.setVisibleCards(cc);
+        List<Player> players = new ArrayList<>();
+        players.add(p1);
+        players.add(p2);
+
+        assertEquals(c2, ranker.pickWinner(players, communityCards).get(0).getHand().getCards());
+    }
+
+    @Test
+    public void pickWinnerTie(){
+        ClassicHandRanker ranker = new ClassicHandRanker();
+
+        Player p1 = new Player();
+        Player p2 = new Player();
+
+        Hand h1 = new Hand();
+        Hand h2 = new Hand();
+
+        List<Card> c1 = new ArrayList<>();
+        List<Card> c2 = new ArrayList<>();
+        List<Card> cc = new ArrayList<>();
+
+        CommunityCards communityCards = new CommunityCards();
+
+        cc.add(new Card(Card.Rank.ACE, Card.Suit.HEARTS));
+        cc.add(new Card(Card.Rank.ACE, Card.Suit.SPADES));
+        cc.add(new Card(Card.Rank.ACE, Card.Suit.CLUBS));
+        cc.add(new Card(Card.Rank.ACE, Card.Suit.DIAMONDS));
+        cc.add(new Card(Card.Rank.TWO, Card.Suit.HEARTS));
+
+        c1.add(new Card(Card.Rank.TWO, Card.Suit.SPADES));
+        c1.add(new Card(Card.Rank.FOUR, Card.Suit.CLUBS));
+
+        c2.add(new Card(Card.Rank.TWO, Card.Suit.SPADES));
+        c2.add(new Card(Card.Rank.FOUR, Card.Suit.CLUBS));
+
+        h1.setCards(c1);
+        h2.setCards(c2);
+        p1.setHand(h1);
+        p2.setHand(h2);
+
+        communityCards.setVisibleCards(cc);
+        List<Player> players = new ArrayList<>();
+        players.add(p1);
+        players.add(p2);
+
+        assertEquals(2, ranker.pickWinner(players, communityCards).size());
+    }
 
     @Test
     public void findStraightFlushTest() {

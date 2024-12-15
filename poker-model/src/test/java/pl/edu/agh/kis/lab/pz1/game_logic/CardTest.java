@@ -1,6 +1,7 @@
 package pl.edu.agh.kis.lab.pz1.game_logic;
 
 import org.junit.Test;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.Card;
 
 import static org.junit.Assert.assertEquals;
 

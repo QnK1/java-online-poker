@@ -1,6 +1,7 @@
-package pl.edu.agh.kis.lab.pz1.game_logic;
+package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 
 import pl.edu.agh.kis.lab.pz1.game_exceptions.DeckIsEmptyException;
+import pl.edu.agh.kis.lab.pz1.game_logic.AbstractDeck;
 
 import java.util.ArrayList;
 import java.util.Collections;

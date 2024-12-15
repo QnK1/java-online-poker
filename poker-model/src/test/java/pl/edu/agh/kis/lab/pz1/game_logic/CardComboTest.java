@@ -2,6 +2,9 @@ package pl.edu.agh.kis.lab.pz1.game_logic;
 
 import org.junit.Test;
 import pl.edu.agh.kis.lab.pz1.game_exceptions.IncorrectCardComboException;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.Card;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.CardCombo;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.ComboType;
 
 import java.util.ArrayList;
 import java.util.List;

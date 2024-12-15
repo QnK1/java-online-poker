@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.lab.pz1.game_logic;
+package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 
 import lombok.Getter;
 import lombok.Setter;

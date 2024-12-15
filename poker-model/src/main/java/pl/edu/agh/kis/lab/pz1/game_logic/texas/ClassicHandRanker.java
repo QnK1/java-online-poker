@@ -1,12 +1,39 @@
-package pl.edu.agh.kis.lab.pz1.game_logic;
+package pl.edu.agh.kis.lab.pz1.game_logic.texas;
+
+import org.javatuples.Pair;
 
 import java.util.*;
 
 public class ClassicHandRanker implements HandRanker {
-    @Override
-    public List<Integer> pickTopHand(CommunityCards communityCards, List<Hand> hand){
 
-        return new ArrayList<>(0);
+    @Override
+    public List<Player> pickWinner(List<Player> players, CommunityCards communityCards){
+        var playerCards = players.stream().map(p -> {
+                    List<Card> cards = new ArrayList<>();
+                    cards.addAll(p.getHand().getCards());
+                    cards.addAll(communityCards.getVisibleCards());
+
+                    return new Pair<>(p, cards);
+                }
+        ).toList();
+
+        var playerCombos = new ArrayList<>(playerCards.stream().map(pl -> new Pair<>(
+                pl.getValue0(),
+                findComboFromHand(pl.getValue1())
+        )).toList());
+
+        playerCombos.sort((pc1, pc2) -> pc2.getValue1().compareTo(pc1.getValue1()));
+
+        List<Player> winners = new ArrayList<>();
+        winners.add(playerCombos.get(0).getValue0());
+
+        for(var pc : playerCombos.subList(1, playerCombos.size())) {
+            if(pc.getValue1().compareTo(playerCombos.get(0).getValue1()) == 0){
+                winners.add(pc.getValue0());
+            }
+        }
+
+        return winners;
     }
 
     public CardCombo findComboFromHand(List<Card> cards){

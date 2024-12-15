@@ -3,6 +3,8 @@ package pl.edu.agh.kis.lab.pz1.game_logic;
 
 import org.junit.Test;
 import pl.edu.agh.kis.lab.pz1.game_exceptions.DeckIsEmptyException;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.Card;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.Deck;
 
 
 import java.util.List;
