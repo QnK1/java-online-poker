@@ -1,6 +1,7 @@
-package pl.edu.agh.kis.lab.pz1.game_logic;
+package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 
 
 public abstract class Game {
     public abstract void startGame();
+    public abstract String getName();
 }
