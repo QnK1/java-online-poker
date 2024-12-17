@@ -1,5 +1,7 @@
 package pl.edu.agh.kis.lab.pz1;
 
+import pl.edu.agh.kis.lab.pz1.game_logic.Game;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -8,8 +10,15 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.HashSet;
+import java.util.Map;
 
 public class NioServer {
+    private final Map<String, Game> gameMap;
+
+    public NioServer() {
+        gameMap = GameMapFactory.getGameMap();
+    }
+
     public void start(final int portNumber){
         var clients = new HashSet<SocketChannel>();
 
@@ -36,6 +45,8 @@ public class NioServer {
                             client.configureBlocking(false);
                             client.register(selector, SelectionKey.OP_READ);
                             clients.add(client);
+
+                            sendWelcomeMessage(client);
                         } else {
                             throw new RuntimeException("Unknown channel: " + key.channel());
                         }
@@ -77,6 +88,27 @@ public class NioServer {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    private void sendWelcomeMessage(SocketChannel client) {
+        try(client){
+            StringBuilder sb = new StringBuilder();
+            sb.append("Welcome to the Poker Server\n");
+            sb.append("\n");
+            sb.append("Available variants:\n");
+
+            for(String gameName : gameMap.keySet()){
+                sb.append("\t").append(gameName).append("\n");
+            }
+
+            ByteBuffer buffer = ByteBuffer.wrap(sb.toString().getBytes());
+            buffer.flip();
+            while(buffer.hasRemaining()){
+                client.write(buffer);
+            }
+        } catch(IOException e){
+            throw new RuntimeException(e);
         }
     }
 }

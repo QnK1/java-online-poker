@@ -1,12 +1,13 @@
 package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 
+import lombok.Getter;
 import pl.edu.agh.kis.lab.pz1.game_exceptions.DeckIsEmptyException;
-import pl.edu.agh.kis.lab.pz1.game_logic.AbstractDeck;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@Getter
 public class Deck extends AbstractDeck {
     public Deck() {
         cards = new ArrayList<>();

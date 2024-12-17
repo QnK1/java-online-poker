@@ -1,100 +1,292 @@
 package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 
+import lombok.Getter;
 import pl.edu.agh.kis.lab.pz1.game_exceptions.InvalidNumberOfPlayersException;
 import pl.edu.agh.kis.lab.pz1.game_logic.Game;
 
 import java.util.*;
 
+@Getter
 public class TexasHoldemGame extends Game {
-    private enum GamePhase{
+    public enum GamePhase{
         PRE_FLOP,
         FLOP,
         TURN,
         RIVER
-    };
+    }
 
     private final List<Player> players;
-    private List<Player> currentPlayers;
+    private final Set<Player> folded;
     private Deck deck;
     private CommunityCards communityCards;
     private int currentPot;
     private final int smallBlindBet;
     private GamePhase gamePhase;
-    private int currentPlayerIndex;
+    private int activePlayerIndex;
+    private final ClassicHandRanker handRanker;
+    private final Map<GamePhase, Set<Action>> allowedActions;
+    private boolean gameOver;
+    private final Set<Player> checkedThisTurn;
+    private final Set<Player> movedThisTurn;
 
     public TexasHoldemGame(List<Player> players, int initialMoney, int smallBlindBet) {
-        if(players.size() < 2){
+        if(initialMoney <= 0 || smallBlindBet <= 0 || initialMoney < smallBlindBet * 2){
+            throw new IllegalArgumentException("Invalid money");
+        }
+
+        if(players == null || players.size() < 2){
             throw new InvalidNumberOfPlayersException("You must have at least two players");
         }
 
+        this.checkedThisTurn = new HashSet<>();
+        this.movedThisTurn = new HashSet<>();
+        this.gameOver = false;
+
+        this.handRanker = new ClassicHandRanker();
+
         this.players = players;
-        this.currentPlayers = players;
+        this.folded = new HashSet<>();
 
         ShuffledDeckFactory df = new ShuffledDeckFactory();
 
         this.deck = df.getDeck();
+        this.communityCards = new CommunityCards();
 
         this.currentPot = 0;
         this.smallBlindBet = smallBlindBet;
-        this.gamePhase = GamePhase.PRE_FLOP;
+        this.gamePhase = null;
         initializeMoney(initialMoney);
 
+        allowedActions = new EnumMap<>(GamePhase.class);
+        allowedActions.put(GamePhase.PRE_FLOP, new HashSet<>());
+        allowedActions.put(GamePhase.FLOP, new HashSet<>());
+        allowedActions.put(GamePhase.TURN, new HashSet<>());
+        allowedActions.put(GamePhase.RIVER, new HashSet<>());
+
+        allowedActions.get(GamePhase.PRE_FLOP).add(Action.CALL);
+        allowedActions.get(GamePhase.PRE_FLOP).add(Action.RAISE);
+        allowedActions.get(GamePhase.PRE_FLOP).add(Action.FOLD);
+        allowedActions.get(GamePhase.PRE_FLOP).add(Action.LEAVE_GAME);
+
+        allowedActions.get(GamePhase.FLOP).add(Action.CALL);
+        allowedActions.get(GamePhase.FLOP).add(Action.RAISE);
+        allowedActions.get(GamePhase.FLOP).add(Action.FOLD);
+        allowedActions.get(GamePhase.FLOP).add(Action.CHECK);
+        allowedActions.get(GamePhase.FLOP).add(Action.LEAVE_GAME);
+
+        allowedActions.get(GamePhase.TURN).add(Action.CALL);
+        allowedActions.get(GamePhase.TURN).add(Action.RAISE);
+        allowedActions.get(GamePhase.TURN).add(Action.FOLD);
+        allowedActions.get(GamePhase.TURN).add(Action.CHECK);
+        allowedActions.get(GamePhase.TURN).add(Action.LEAVE_GAME);
+
+        allowedActions.get(GamePhase.RIVER).add(Action.CALL);
+        allowedActions.get(GamePhase.RIVER).add(Action.RAISE);
+        allowedActions.get(GamePhase.RIVER).add(Action.FOLD);
+        allowedActions.get(GamePhase.RIVER).add(Action.CHECK);
+        allowedActions.get(GamePhase.RIVER).add(Action.LEAVE_GAME);
     }
 
     @Override
     public void startGame(){
-        while(players.size() >= 2){
-            startNextRound();
-        }
-    }
-
-    private void startNextRound(){
         setupRound();
-        startPreFlop();
     }
 
-    private void startPreFlop(){
-        getBlindBets();
+    public Map<String, Integer> postGameInfo(){
+        Map<String, Integer> playerMoney = new HashMap<>();
+        for(Player player : players){
+            playerMoney.put(player.getName(), player.getMoney());
+        }
 
-        Set<Action> allowedActions = new HashSet<>();
-        allowedActions.add(Action.CALL);
-        allowedActions.add(Action.RAISE);
-        allowedActions.add(Action.LEAVE_GAME);
-
-        startBetting(allowedActions);
+        return playerMoney;
     }
 
-    private void startFlop(){
+    public boolean act(Player player, Action action, int param){
+        if(action == Action.LEAVE_GAME){
+            removePlayer(player);
+        }
+        else if(!isActionValid(player, action, param)){
+            return false;
+        }
 
+        if(!allowedActions.get(gamePhase).contains(action)){
+            return false;
+        }
+
+        switch(action){
+            case CALL:
+                makeBet(player, getMaxBet() - player.getCurrentBet());
+                movedThisTurn.add(player);
+            break;
+
+            case RAISE:
+                if(param <= getMaxBet() - player.getCurrentBet()){
+                    return false;
+                }
+                makeBet(player, param);
+                movedThisTurn.add(player);
+            break;
+
+            case CHECK:
+                if(!areAllBetsEqual() || checkedThisTurn.contains(player)){
+                    return false;
+                }
+                else{
+                    checkedThisTurn.add(player);
+                    movedThisTurn.add(player);
+                }
+            break;
+
+            case LEAVE_GAME, FOLD:
+                folded.add(player);
+            break;
+
+        }
+
+        if(!gameOver && isRoundOver()){
+            distributeMoney();
+
+            if(numberOfPlayersWIthMoney() >= 2){
+                setupRound();
+            } else{
+              gameOver = true;
+            }
+
+        }
+        else if(action != Action.LEAVE_GAME || getCurrentPlayers().size() >= 2){
+            if(areAllBetsEqual()){
+                nextPlayer();
+                nextPhase();
+            }
+            else{
+                nextPlayer();
+            }
+        }
+
+        return true;
     }
 
-    private void startTurn(){
+    private void nextPhase(){
+        checkedThisTurn.clear();
+        movedThisTurn.clear();
 
-    }
+        switch(gamePhase){
+            case PRE_FLOP:
+                communityCards.showCards(3);
+                gamePhase = GamePhase.FLOP;
+            break;
 
-    private void startRiver(){
+            case FLOP:
+                communityCards.showCards(1);
+                gamePhase = GamePhase.TURN;
+            break;
 
-    }
+            case TURN:
+                communityCards.showCards(1);
+                gamePhase = GamePhase.RIVER;
+            break;
 
-    private void startBetting(Set<Action> allowedActions){
-        for(int i = currentPlayerIndex; i < players.size(); ++i){
-            currentPlayers.get(i).readAction(allowedActions);
+            case RIVER:
+                distributeMoney();
+                setupRound();
+            break;
         }
     }
 
-    private void getBlindBets(){
-        players.get(0).setCurrentBet(smallBlindBet);
-        players.get(1).setCurrentBet(smallBlindBet * 2);
+    private boolean isActionValid(Player player, Action action, int param){
+        return !(gameOver || param < 0 || isRoundOver() || !isPlayerActive(player) ||
+                (action == Action.RAISE && param <= getMaxBet() - player.getCurrentBet()) ||
+                action == Action.CALL && areAllBetsEqual() ||
+                action == Action.CALL && getMaxBet() - player.getCurrentBet() > player.getMoney() ||
+                param > player.getMoney()
+                );
+    }
 
-        currentPot += players.get(0).getCurrentBet();
-        currentPot += players.get(1).getCurrentBet();
+    private void removePlayer(Player player){
+        players.remove(player);
+        if(players.size() < 2){
+            gameOver = true;
+        }
+    }
 
-        currentPlayerIndex = 2;
+    private int getMaxBet(){
+        int maxBet = 0;
+        List<Player> currentPlayers = players.stream().filter(player ->
+                !folded.contains(player)).toList();
+        for(Player player : currentPlayers){
+            maxBet = Math.max(maxBet, player.getCurrentBet());
+        }
+
+        return maxBet;
+    }
+
+    private int numberOfPlayersWIthMoney(){
+        var playersWithMoney = players.stream()
+                .filter(player -> player.getMoney() >= 2 * smallBlindBet).toList();
+
+
+        return playersWithMoney.size();
+    }
+
+    private boolean isPlayerActive(Player player){
+        return player == players.get(activePlayerIndex);
+    }
+
+    private boolean areAllBetsEqual(){
+        if(getCurrentPlayers().size() < movedThisTurn.size()){
+            return false;
+        }
+
+        List<Player> activePlayers = players.stream().filter(player ->
+                !folded.contains(player)).toList();
+
+        int bet = activePlayers.get(0).getCurrentBet();
+        for(Player player : activePlayers){
+            if(player.getCurrentBet() != bet) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isRoundOver(){
+        return getNumberOfCurrentPlayers() < 2 || (areAllBetsEqual() && gamePhase == GamePhase.RIVER);
+    }
+
+
+    private List<Player> getWinners(){
+        return !getCurrentPlayers().isEmpty() ?
+                handRanker.pickWinner(getCurrentPlayers(), communityCards) : null;
+    }
+
+    private void distributeMoney(){
+        if(players.size() >= 2){
+            List<Player> winners = getWinners();
+            int nOfWinners = winners.size();
+
+            for(Player winner : winners){
+                winner.setMoney(winner.getMoney() + currentPot / nOfWinners);
+            }
+
+            this.currentPot = 0;
+        }
+        else if(players.size() == 1){
+            players.get(0).setMoney(players.get(0).getMoney() + this.currentPot);
+            gameOver = true;
+        }
+
+    }
+
+    private List<Player> getCurrentPlayers(){
+        return players.stream().filter(player -> !folded.contains(player)).toList();
     }
 
     private void setupRound(){
+        checkedThisTurn.clear();
+        movedThisTurn.clear();
         rotateBlinds();
-        this.currentPlayers = players;
+        this.folded.clear();
         this.gamePhase = GamePhase.PRE_FLOP;
         this.currentPot = 0;
         resetCards();
@@ -102,7 +294,8 @@ public class TexasHoldemGame extends Game {
         for(var player : players){
             player.setCurrentBet(0);
         }
-        currentPlayerIndex = 0;
+        activePlayerIndex = 0;
+        getBlindBets();
     }
 
     private void resetCards(){
@@ -133,5 +326,44 @@ public class TexasHoldemGame extends Game {
             player.setMoney(initialMoney);
             player.setCurrentBet(0);
         }
+    }
+
+    private void getBlindBets(){
+        Player smallBlind = players.get(0);
+        Player bigBlind = players.get(1);
+
+        makeBet(smallBlind, smallBlindBet);
+        makeBet(bigBlind, smallBlindBet * 2);
+
+        nextPlayer();
+        nextPlayer();
+    }
+
+    private void nextPlayer(){
+        do{
+            activePlayerIndex = (activePlayerIndex + 1) % getNumberOfCurrentPlayers();
+        } while(folded.contains(players.get(activePlayerIndex)));
+    }
+
+    private void makeBet(Player player, int amount){
+        if(amount < 0 || amount > player.getMoney()) {
+            throw new IllegalArgumentException("Invalid bet");
+        }
+
+        player.setCurrentBet(player.getCurrentBet() + amount);
+        player.setMoney(player.getMoney() - amount);
+        currentPot += amount;
+    }
+
+    private int getNumberOfCurrentPlayers(){
+        List<Player> activePlayers = players.stream().filter(player ->
+                !folded.contains(player)).toList();
+
+        return activePlayers.size();
+    }
+
+    @Override
+    public String getName(){
+        return "TEXAS HOLDEM";
     }
 }

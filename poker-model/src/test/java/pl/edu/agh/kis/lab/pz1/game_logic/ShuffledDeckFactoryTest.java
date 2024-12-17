@@ -1,6 +1,7 @@
 package pl.edu.agh.kis.lab.pz1.game_logic;
 
 import org.junit.Test;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.AbstractDeckFactory;
 import pl.edu.agh.kis.lab.pz1.game_logic.texas.Card;
 import pl.edu.agh.kis.lab.pz1.game_logic.texas.Deck;
 import pl.edu.agh.kis.lab.pz1.game_logic.texas.ShuffledDeckFactory;
@@ -18,7 +19,7 @@ public class ShuffledDeckFactoryTest {
 
         assertEquals(52, deck.getSize());
 
-        Set<Card> cards = new HashSet<>(deck.cards);
+        Set<Card> cards = new HashSet<>(deck.getCards());
         assertEquals(52, cards.size());
 
     }
