@@ -9,14 +9,16 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+
 public class NioServer {
-    private final Map<String, Game> gameMap;
+    private final Map<SocketChannel, Game> clientsInGame;
 
     public NioServer() {
-        gameMap = GameMapFactory.getGameMap();
+        clientsInGame = new HashMap<>();
     }
 
     public void start(final int portNumber){
@@ -45,8 +47,6 @@ public class NioServer {
                             client.configureBlocking(false);
                             client.register(selector, SelectionKey.OP_READ);
                             clients.add(client);
-
-                            sendWelcomeMessage(client);
                         } else {
                             throw new RuntimeException("Unknown channel: " + key.channel());
                         }
@@ -91,24 +91,26 @@ public class NioServer {
         }
     }
 
-    private void sendWelcomeMessage(SocketChannel client) {
-        try(client){
-            StringBuilder sb = new StringBuilder();
-            sb.append("Welcome to the Poker Server\n");
-            sb.append("\n");
-            sb.append("Available variants:\n");
 
-            for(String gameName : gameMap.keySet()){
-                sb.append("\t").append(gameName).append("\n");
-            }
 
-            ByteBuffer buffer = ByteBuffer.wrap(sb.toString().getBytes());
-            buffer.flip();
-            while(buffer.hasRemaining()){
-                client.write(buffer);
-            }
-        } catch(IOException e){
-            throw new RuntimeException(e);
-        }
-    }
+//    private void sendWelcomeMessage(SocketChannel client) {
+//        try(client){
+//            StringBuilder sb = new StringBuilder();
+//            sb.append("Welcome to the Poker Server\n");
+//            sb.append("\n");
+//            sb.append("Available variants:\n");
+//
+//            for(String gameName : gameMap.keySet()){
+//                sb.append("\t").append(gameName).append("\n");
+//            }
+//
+//            ByteBuffer buffer = ByteBuffer.wrap(sb.toString().getBytes());
+//            buffer.flip();
+//            while(buffer.hasRemaining()){
+//                client.write(buffer);
+//            }
+//        } catch(IOException e){
+//            throw new RuntimeException(e);
+//        }
+//    }
 }

@@ -5,6 +5,7 @@ import pl.edu.agh.kis.lab.pz1.game_exceptions.InvalidNumberOfPlayersException;
 import pl.edu.agh.kis.lab.pz1.game_logic.Game;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 public class TexasHoldemGame extends Game {
@@ -29,6 +30,10 @@ public class TexasHoldemGame extends Game {
     private final Set<Player> checkedThisTurn;
     private final Set<Player> movedThisTurn;
 
+    private List<String> lastWinnerNames;
+    private int lastWin;
+    private List<String> lastWinningCards;
+
     public TexasHoldemGame(List<Player> players, int initialMoney, int smallBlindBet) {
         if(initialMoney <= 0 || smallBlindBet <= 0 || initialMoney < smallBlindBet * 2){
             throw new IllegalArgumentException("Invalid money");
@@ -41,6 +46,10 @@ public class TexasHoldemGame extends Game {
         this.checkedThisTurn = new HashSet<>();
         this.movedThisTurn = new HashSet<>();
         this.gameOver = false;
+
+        this.lastWinnerNames = null;
+        this.lastWin = 0;
+        this.lastWinningCards = null;
 
         this.handRanker = new ClassicHandRanker();
 
@@ -92,15 +101,6 @@ public class TexasHoldemGame extends Game {
         setupRound();
     }
 
-    public Map<String, Integer> postGameInfo(){
-        Map<String, Integer> playerMoney = new HashMap<>();
-        for(Player player : players){
-            playerMoney.put(player.getName(), player.getMoney());
-        }
-
-        return playerMoney;
-    }
-
     public boolean act(Player player, Action action, int param){
         if(action == Action.LEAVE_GAME){
             removePlayer(player);
@@ -144,6 +144,8 @@ public class TexasHoldemGame extends Game {
         }
 
         if(!gameOver && isRoundOver()){
+            saveWinnerInfo();
+
             distributeMoney();
 
             if(numberOfPlayersWIthMoney() >= 2){
@@ -154,7 +156,7 @@ public class TexasHoldemGame extends Game {
 
         }
         else if(action != Action.LEAVE_GAME || getCurrentPlayers().size() >= 2){
-            if(areAllBetsEqual()){
+            if(areAllBetsEqual() && getCurrentPlayers().size() <= movedThisTurn.size()){
                 nextPlayer();
                 nextPhase();
             }
@@ -164,6 +166,16 @@ public class TexasHoldemGame extends Game {
         }
 
         return true;
+    }
+
+    private void saveWinnerInfo(){
+        this.lastWinnerNames = handRanker.pickWinner(getCurrentPlayers(), communityCards).stream()
+                .map(Player::getName).toList();
+        this.lastWin = this.currentPot / this.lastWinnerNames.size();
+
+        List<Card> cards = new ArrayList<>(handRanker.pickWinner(getCurrentPlayers(), communityCards).get(0).getHand().getCards());
+        cards.addAll(communityCards.getVisibleCards());
+        this.lastWinningCards = handRanker.findComboFromHand(cards).cards().stream().map(Card::toString).toList();
     }
 
     private void nextPhase(){
@@ -187,6 +199,7 @@ public class TexasHoldemGame extends Game {
             break;
 
             case RIVER:
+                saveWinnerInfo();
                 distributeMoney();
                 setupRound();
             break;
@@ -233,10 +246,6 @@ public class TexasHoldemGame extends Game {
     }
 
     private boolean areAllBetsEqual(){
-        if(getCurrentPlayers().size() < movedThisTurn.size()){
-            return false;
-        }
-
         List<Player> activePlayers = players.stream().filter(player ->
                 !folded.contains(player)).toList();
 
@@ -251,7 +260,8 @@ public class TexasHoldemGame extends Game {
     }
 
     private boolean isRoundOver(){
-        return getNumberOfCurrentPlayers() < 2 || (areAllBetsEqual() && gamePhase == GamePhase.RIVER);
+        return getNumberOfCurrentPlayers() < 2 || (areAllBetsEqual() && gamePhase == GamePhase.RIVER
+        && getCurrentPlayers().size() <= movedThisTurn.size());
     }
 
 
@@ -334,6 +344,9 @@ public class TexasHoldemGame extends Game {
 
         makeBet(smallBlind, smallBlindBet);
         makeBet(bigBlind, smallBlindBet * 2);
+
+        movedThisTurn.add(smallBlind);
+        movedThisTurn.add(bigBlind);
 
         nextPlayer();
         nextPlayer();
