@@ -14,5 +14,5 @@ public abstract class Lobby {
     Game game;
     private boolean started;
     public abstract void createGame();
-    public abstract void addPlayer(String name);
+    public abstract void addPlayer(Player player);
 }

@@ -1,6 +1,7 @@
 package pl.edu.agh.kis.lab.pz1;
 
 import lombok.Getter;
+import pl.edu.agh.kis.lab.pz1.game_logic.Player;
 import pl.edu.agh.kis.lab.pz1.game_logic.texas.THPlayer;
 import pl.edu.agh.kis.lab.pz1.game_logic.texas.TexasHoldemGame;
 
@@ -19,10 +20,9 @@ public class TexasHoldemLobby extends Lobby {
     }
 
     @Override
-    public void addPlayer(String name){
-        THPlayer player = new THPlayer();
-        player.setName(name);
-        players.add(player);
+    public void addPlayer(Player player){
+        THPlayer p = (THPlayer) player;
+        players.add(p);
     }
 
     @Override

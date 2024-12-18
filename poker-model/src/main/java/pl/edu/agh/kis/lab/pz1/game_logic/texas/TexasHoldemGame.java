@@ -33,7 +33,8 @@ public class TexasHoldemGame extends Game {
     private List<String> lastWinnerNames;
     private int lastWin;
     private List<String> lastWinningCards;
-    private Map<String, Action> allowedCommands;
+    private final Map<String, Action> allowedCommands;
+    boolean newWinnerFound;
 
     public TexasHoldemGame(List<THPlayer> players, int initialMoney, int smallBlindBet) {
         if(initialMoney <= 0 || smallBlindBet <= 0 || initialMoney < smallBlindBet * 2){
@@ -98,9 +99,12 @@ public class TexasHoldemGame extends Game {
 
         allowedCommands = new HashMap<>();
         allowedCommands.put("LEAVE", Action.LEAVE_GAME);
+        allowedCommands.put("CALL", Action.LEAVE_GAME);
         allowedCommands.put("CHECK", Action.CHECK);
         allowedCommands.put("RAISE", Action.RAISE);
         allowedCommands.put("FOLD", Action.FOLD);
+
+        this.newWinnerFound = false;
     }
 
     @Override
@@ -134,6 +138,8 @@ public class TexasHoldemGame extends Game {
         // HANDLE INCORRECT PLAYER NAME
         THPlayer player = getPlayerByName(name);
 
+        THPlayer activePlayer = players.get(activePlayerIndex);
+
         if(player == null){
             return null;
         }
@@ -143,12 +149,18 @@ public class TexasHoldemGame extends Game {
         sb.append("Current phase: ").append(gamePhase);
         sb.append("\n");
         for(THPlayer p : players){
-            if(p == player){
-                continue;
+            sb.append(p.getName());
+            if(p == activePlayer){
+                sb.append(" (active)");
             }
-            sb.append(p.getName()).append(" - bet: ").append(p.getCurrentBet()).append("\n");
+            sb.append(" - bet: ").append(p.getCurrentBet()).append("\n");
         }
-        sb.append(name).append(" - money: ").append(player.getMoney()).append("\n");
+        sb.append("\n");
+        sb.append(name);
+        if(activePlayer == player){
+            sb.append(" (active)");
+        }
+        sb.append(" - money: ").append(player.getMoney()).append("\n");
         for(Card card : player.getHand().getCards()){
             sb.append(card).append("\n");
         }
@@ -193,6 +205,7 @@ public class TexasHoldemGame extends Game {
             case CALL:
                 makeBet(player, getMaxBet() - player.getCurrentBet());
                 movedThisTurn.add(player);
+                newWinnerFound = false;
             break;
 
             case RAISE:
@@ -201,6 +214,7 @@ public class TexasHoldemGame extends Game {
                 }
                 makeBet(player, param);
                 movedThisTurn.add(player);
+                newWinnerFound = false;
             break;
 
             case CHECK:
@@ -210,17 +224,20 @@ public class TexasHoldemGame extends Game {
                 else{
                     checkedThisTurn.add(player);
                     movedThisTurn.add(player);
+                    newWinnerFound = false;
                 }
             break;
 
             case LEAVE_GAME, FOLD:
                 folded.add(player);
+                newWinnerFound = false;
             break;
 
         }
 
         if(!gameOver && isRoundOver()){
             saveWinnerInfo();
+            newWinnerFound = true;
 
             distributeMoney();
 

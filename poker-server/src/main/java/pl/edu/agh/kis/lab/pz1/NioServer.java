@@ -12,10 +12,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 
 public class NioServer {
@@ -88,7 +85,7 @@ public class NioServer {
                                         THPlayer player = new THPlayer();
                                         player.setName(args.get(2));
                                         clientPlayers.put(client, player);
-                                        lobby.addPlayer(player.getName());
+                                        lobby.addPlayer(player);
 
                                         buffer.put(("lobby " + args.get(1) + " created").getBytes());
                                         buffer.flip();
@@ -105,7 +102,7 @@ public class NioServer {
                                         THPlayer player = new THPlayer();
                                         player.setName(args.get(2));
                                         clientPlayers.put(client, player);
-                                        lobby.addPlayer(player.getName());
+                                        lobby.addPlayer(player);
 
                                         buffer.put(("game " + args.get(1) + " joined").getBytes());
                                         buffer.flip();
@@ -119,11 +116,35 @@ public class NioServer {
                                     var lobby = clientsInLobby.get(client);
                                     var player = clientPlayers.get(client);
                                     if(lobby.isStarted()){
-//                                        String gameData = lobby.getGame().getGameState(player.getName());
-//                                        if(lobby.game.executeCommand(player, data))
+                                        String message;
 
+                                        boolean commandSuccess = lobby.game.executeCommand(player, data);
 
-                                        buffer.put(lobby.getGame().getGameState(player.getName()).getBytes());
+                                        if(commandSuccess && data.strip().split(" ")[0].equals("LEAVE")
+                                                || lobby.game.isGameOver()){
+                                            clientPlayers.remove(client);
+                                            clientsInLobby.remove(client);
+
+                                        }
+
+                                        if(commandSuccess){
+                                            message = "\nCOMMAND SUCCESSFUL";
+                                        }else{
+                                            message = "\nENTER VALID COMMAND";
+                                        }
+                                        String winData = "";
+                                        if(lobby.game.isNewWinnerFound()){
+                                            String lastWinner = lobby.game.getLastWinnerNames().get(0);
+                                            int lastWin =  lobby.game.getLastWin();
+                                            List<String> lastCards = lobby.game.getLastWinningCards();
+
+                                            winData = "\n" + lastWinner + " WON " + lastWin +
+                                                    "\nWITH" + lastCards;
+                                        }
+                                        String gameData = lobby.getGame().getGameState(player.getName()) + message +
+                                                winData;
+
+                                        buffer.put(gameData.getBytes());
                                         buffer.flip();
                                         while(buffer.hasRemaining()){
                                             client.write(buffer);
