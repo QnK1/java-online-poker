@@ -14,8 +14,8 @@ public class ClassicHandRankerTest {
     public void pickWinnerTiebreakerTest(){
         ClassicHandRanker ranker = new ClassicHandRanker();
 
-        Player p1 = new Player();
-        Player p2 = new Player();
+        THPlayer p1 = new THPlayer();
+        THPlayer p2 = new THPlayer();
 
         Hand h1 = new Hand();
         Hand h2 = new Hand();
@@ -44,7 +44,7 @@ public class ClassicHandRankerTest {
         p2.setHand(h2);
 
         communityCards.setVisibleCards(cc);
-        List<Player> players = new ArrayList<>();
+        List<THPlayer> players = new ArrayList<>();
         players.add(p1);
         players.add(p2);
 
@@ -55,8 +55,8 @@ public class ClassicHandRankerTest {
     public void pickWinnerTie(){
         ClassicHandRanker ranker = new ClassicHandRanker();
 
-        Player p1 = new Player();
-        Player p2 = new Player();
+        THPlayer p1 = new THPlayer();
+        THPlayer p2 = new THPlayer();
 
         Hand h1 = new Hand();
         Hand h2 = new Hand();
@@ -85,7 +85,7 @@ public class ClassicHandRankerTest {
         p2.setHand(h2);
 
         communityCards.setVisibleCards(cc);
-        List<Player> players = new ArrayList<>();
+        List<THPlayer> players = new ArrayList<>();
         players.add(p1);
         players.add(p2);
 

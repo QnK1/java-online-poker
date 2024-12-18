@@ -4,7 +4,7 @@ import org.junit.Test;
 import pl.edu.agh.kis.lab.pz1.game_exceptions.InvalidNumberOfPlayersException;
 import pl.edu.agh.kis.lab.pz1.game_logic.texas.Action;
 import pl.edu.agh.kis.lab.pz1.game_logic.texas.Card;
-import pl.edu.agh.kis.lab.pz1.game_logic.texas.Player;
+import pl.edu.agh.kis.lab.pz1.game_logic.texas.THPlayer;
 import pl.edu.agh.kis.lab.pz1.game_logic.texas.TexasHoldemGame;
 
 import java.util.ArrayList;
@@ -17,13 +17,13 @@ public class TexasHoldemGameTest {
 
     @Test
     public void constructorThrowsForInvalidArgumentsTest() {
-        List<Player> players = new ArrayList<>();
+        List<THPlayer> players = new ArrayList<>();
 
         assertThrows(InvalidNumberOfPlayersException.class, () -> {
             new TexasHoldemGame(players, 100, 2);
         });
 
-        players.add(new Player());
+        players.add(new THPlayer());
 
         assertThrows(InvalidNumberOfPlayersException.class, () -> {
             new TexasHoldemGame(players, 100, 2);
@@ -33,8 +33,8 @@ public class TexasHoldemGameTest {
             new TexasHoldemGame(null, 100, 2);
         });
 
-        players.add(new Player());
-        players.add(new Player());
+        players.add(new THPlayer());
+        players.add(new THPlayer());
 
         assertThrows(IllegalArgumentException.class, () -> {
             new TexasHoldemGame(players, 0, 0);
@@ -47,9 +47,9 @@ public class TexasHoldemGameTest {
 
     @Test
     public void dealCardsTest() {
-        List<Player> players = new ArrayList<>();
-        var player1 = new Player();
-        var player2 = new Player();
+        List<THPlayer> players = new ArrayList<>();
+        var player1 = new THPlayer();
+        var player2 = new THPlayer();
         player1.setName("Joe");
         player2.setName("Bob");
         players.add(player1);
@@ -78,9 +78,9 @@ public class TexasHoldemGameTest {
 
     @Test
     public void leaveGameActionTest(){
-        List<Player> players = new ArrayList<>();
-        var player1 = new Player();
-        var player2 = new Player();
+        List<THPlayer> players = new ArrayList<>();
+        var player1 = new THPlayer();
+        var player2 = new THPlayer();
         player1.setName("Joe");
         player2.setName("Bob");
         players.add(player1);
@@ -97,9 +97,9 @@ public class TexasHoldemGameTest {
 
     @Test
     public void invalidActionTest(){
-        List<Player> players = new ArrayList<>();
-        var player1 = new Player();
-        var player2 = new Player();
+        List<THPlayer> players = new ArrayList<>();
+        var player1 = new THPlayer();
+        var player2 = new THPlayer();
         player1.setName("Joe");
         player2.setName("Bob");
         players.add(player1);
@@ -113,9 +113,9 @@ public class TexasHoldemGameTest {
 
     @Test
     public void callTest(){
-        List<Player> players = new ArrayList<>();
-        var player1 = new Player();
-        var player2 = new Player();
+        List<THPlayer> players = new ArrayList<>();
+        var player1 = new THPlayer();
+        var player2 = new THPlayer();
         player1.setName("Joe");
         player2.setName("Bob");
         players.add(player1);
@@ -136,9 +136,9 @@ public class TexasHoldemGameTest {
 
     @Test
     public void raiseTest(){
-        List<Player> players = new ArrayList<>();
-        var player1 = new Player();
-        var player2 = new Player();
+        List<THPlayer> players = new ArrayList<>();
+        var player1 = new THPlayer();
+        var player2 = new THPlayer();
         player1.setName("Joe");
         player2.setName("Bob");
         players.add(player1);
@@ -170,9 +170,9 @@ public class TexasHoldemGameTest {
 
     @Test
     public void foldDuringGameTest(){
-        List<Player> players = new ArrayList<>();
-        var player1 = new Player();
-        var player2 = new Player();
+        List<THPlayer> players = new ArrayList<>();
+        var player1 = new THPlayer();
+        var player2 = new THPlayer();
         player1.setName("Joe");
         player2.setName("Bob");
         players.add(player1);
@@ -203,9 +203,9 @@ public class TexasHoldemGameTest {
 
     @Test
     public void checkTest(){
-        List<Player> players = new ArrayList<>();
-        var player1 = new Player();
-        var player2 = new Player();
+        List<THPlayer> players = new ArrayList<>();
+        var player1 = new THPlayer();
+        var player2 = new THPlayer();
         player1.setName("Joe");
         player2.setName("Bob");
         players.add(player1);
@@ -257,10 +257,10 @@ public class TexasHoldemGameTest {
 
     @Test
     public void nameTest() {
-        List<Player> players = new ArrayList<Player>();
-        players.add(new Player());
-        players.add(new Player());
-        players.add(new Player());
+        List<THPlayer> players = new ArrayList<THPlayer>();
+        players.add(new THPlayer());
+        players.add(new THPlayer());
+        players.add(new THPlayer());
 
         TexasHoldemGame game = new TexasHoldemGame(players, 3, 1);
         var name = game.getName();

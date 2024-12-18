@@ -1,0 +1,3 @@
+create <nazwa_gry> <nick>
+join <nazwa_gry> <nick>
+start

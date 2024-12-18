@@ -3,9 +3,9 @@ package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 import lombok.Getter;
 import pl.edu.agh.kis.lab.pz1.game_exceptions.InvalidNumberOfPlayersException;
 import pl.edu.agh.kis.lab.pz1.game_logic.Game;
+import pl.edu.agh.kis.lab.pz1.game_logic.Player;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Getter
 public class TexasHoldemGame extends Game {
@@ -16,8 +16,8 @@ public class TexasHoldemGame extends Game {
         RIVER
     }
 
-    private final List<Player> players;
-    private final Set<Player> folded;
+    private final List<THPlayer> players;
+    private final Set<THPlayer> folded;
     private Deck deck;
     private CommunityCards communityCards;
     private int currentPot;
@@ -27,14 +27,15 @@ public class TexasHoldemGame extends Game {
     private final ClassicHandRanker handRanker;
     private final Map<GamePhase, Set<Action>> allowedActions;
     private boolean gameOver;
-    private final Set<Player> checkedThisTurn;
-    private final Set<Player> movedThisTurn;
+    private final Set<THPlayer> checkedThisTurn;
+    private final Set<THPlayer> movedThisTurn;
 
     private List<String> lastWinnerNames;
     private int lastWin;
     private List<String> lastWinningCards;
+    private Map<String, Action> allowedCommands;
 
-    public TexasHoldemGame(List<Player> players, int initialMoney, int smallBlindBet) {
+    public TexasHoldemGame(List<THPlayer> players, int initialMoney, int smallBlindBet) {
         if(initialMoney <= 0 || smallBlindBet <= 0 || initialMoney < smallBlindBet * 2){
             throw new IllegalArgumentException("Invalid money");
         }
@@ -94,6 +95,81 @@ public class TexasHoldemGame extends Game {
         allowedActions.get(GamePhase.RIVER).add(Action.FOLD);
         allowedActions.get(GamePhase.RIVER).add(Action.CHECK);
         allowedActions.get(GamePhase.RIVER).add(Action.LEAVE_GAME);
+
+        allowedCommands = new HashMap<>();
+        allowedCommands.put("LEAVE", Action.LEAVE_GAME);
+        allowedCommands.put("CHECK", Action.CHECK);
+        allowedCommands.put("RAISE", Action.RAISE);
+        allowedCommands.put("FOLD", Action.FOLD);
+    }
+
+    @Override
+    public boolean executeCommand(Player p, String command){
+        THPlayer player = (THPlayer) p;
+
+        var args = Arrays.asList(command.strip().split(" "));
+        if(args.isEmpty() || !allowedCommands.containsKey(args.get(0))){
+            return false;
+        }
+
+        return switch (args.get(0)) {
+            case "LEAVE" -> act(player, Action.LEAVE_GAME, 0);
+            case "CHECK" -> act(player, Action.CHECK, 0);
+            case "CALL" -> act(player, Action.CALL, 0);
+            case "RAISE" -> {
+                if (args.size() != 2) {
+                    yield false;
+                }
+                yield act(player, Action.RAISE, Integer.parseInt(args.get(1)));
+            }
+            case "FOLD" -> act(player, Action.FOLD, 0);
+            default -> false;
+        };
+
+
+    }
+
+    @Override
+    public String getGameState(String name){
+        // HANDLE INCORRECT PLAYER NAME
+        THPlayer player = getPlayerByName(name);
+
+        if(player == null){
+            return null;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n");
+        sb.append("Current phase: ").append(gamePhase);
+        sb.append("\n");
+        for(THPlayer p : players){
+            if(p == player){
+                continue;
+            }
+            sb.append(p.getName()).append(" - bet: ").append(p.getCurrentBet()).append("\n");
+        }
+        sb.append(name).append(" - money: ").append(player.getMoney()).append("\n");
+        for(Card card : player.getHand().getCards()){
+            sb.append(card).append("\n");
+        }
+        sb.append("\n");
+        sb.append("Table: ").append("\n");
+        for(Card card : communityCards.getVisibleCards()){
+            sb.append(card).append("\n");
+        }
+
+
+        return sb.toString();
+    }
+
+    private THPlayer getPlayerByName(String name){
+        for(THPlayer player : players){
+            if(player.getName().equals(name)){
+                return player;
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -101,7 +177,7 @@ public class TexasHoldemGame extends Game {
         setupRound();
     }
 
-    public boolean act(Player player, Action action, int param){
+    public boolean act(THPlayer player, Action action, int param){
         if(action == Action.LEAVE_GAME){
             removePlayer(player);
         }
@@ -170,7 +246,7 @@ public class TexasHoldemGame extends Game {
 
     private void saveWinnerInfo(){
         this.lastWinnerNames = handRanker.pickWinner(getCurrentPlayers(), communityCards).stream()
-                .map(Player::getName).toList();
+                .map(THPlayer::getName).toList();
         this.lastWin = this.currentPot / this.lastWinnerNames.size();
 
         List<Card> cards = new ArrayList<>(handRanker.pickWinner(getCurrentPlayers(), communityCards).get(0).getHand().getCards());
@@ -206,7 +282,7 @@ public class TexasHoldemGame extends Game {
         }
     }
 
-    private boolean isActionValid(Player player, Action action, int param){
+    private boolean isActionValid(THPlayer player, Action action, int param){
         return !(gameOver || param < 0 || isRoundOver() || !isPlayerActive(player) ||
                 (action == Action.RAISE && param <= getMaxBet() - player.getCurrentBet()) ||
                 action == Action.CALL && areAllBetsEqual() ||
@@ -215,7 +291,7 @@ public class TexasHoldemGame extends Game {
                 );
     }
 
-    private void removePlayer(Player player){
+    private void removePlayer(THPlayer player){
         players.remove(player);
         if(players.size() < 2){
             gameOver = true;
@@ -224,9 +300,9 @@ public class TexasHoldemGame extends Game {
 
     private int getMaxBet(){
         int maxBet = 0;
-        List<Player> currentPlayers = players.stream().filter(player ->
+        List<THPlayer> currentPlayers = players.stream().filter(player ->
                 !folded.contains(player)).toList();
-        for(Player player : currentPlayers){
+        for(THPlayer player : currentPlayers){
             maxBet = Math.max(maxBet, player.getCurrentBet());
         }
 
@@ -241,16 +317,16 @@ public class TexasHoldemGame extends Game {
         return playersWithMoney.size();
     }
 
-    private boolean isPlayerActive(Player player){
+    private boolean isPlayerActive(THPlayer player){
         return player == players.get(activePlayerIndex);
     }
 
     private boolean areAllBetsEqual(){
-        List<Player> activePlayers = players.stream().filter(player ->
+        List<THPlayer> activePlayers = players.stream().filter(player ->
                 !folded.contains(player)).toList();
 
         int bet = activePlayers.get(0).getCurrentBet();
-        for(Player player : activePlayers){
+        for(THPlayer player : activePlayers){
             if(player.getCurrentBet() != bet) {
                 return false;
             }
@@ -265,17 +341,17 @@ public class TexasHoldemGame extends Game {
     }
 
 
-    private List<Player> getWinners(){
+    private List<THPlayer> getWinners(){
         return !getCurrentPlayers().isEmpty() ?
                 handRanker.pickWinner(getCurrentPlayers(), communityCards) : null;
     }
 
     private void distributeMoney(){
         if(players.size() >= 2){
-            List<Player> winners = getWinners();
+            List<THPlayer> winners = getWinners();
             int nOfWinners = winners.size();
 
-            for(Player winner : winners){
+            for(THPlayer winner : winners){
                 winner.setMoney(winner.getMoney() + currentPot / nOfWinners);
             }
 
@@ -288,7 +364,7 @@ public class TexasHoldemGame extends Game {
 
     }
 
-    private List<Player> getCurrentPlayers(){
+    private List<THPlayer> getCurrentPlayers(){
         return players.stream().filter(player -> !folded.contains(player)).toList();
     }
 
@@ -339,8 +415,8 @@ public class TexasHoldemGame extends Game {
     }
 
     private void getBlindBets(){
-        Player smallBlind = players.get(0);
-        Player bigBlind = players.get(1);
+        THPlayer smallBlind = players.get(0);
+        THPlayer bigBlind = players.get(1);
 
         makeBet(smallBlind, smallBlindBet);
         makeBet(bigBlind, smallBlindBet * 2);
@@ -358,7 +434,7 @@ public class TexasHoldemGame extends Game {
         } while(folded.contains(players.get(activePlayerIndex)));
     }
 
-    private void makeBet(Player player, int amount){
+    private void makeBet(THPlayer player, int amount){
         if(amount < 0 || amount > player.getMoney()) {
             throw new IllegalArgumentException("Invalid bet");
         }
@@ -369,7 +445,7 @@ public class TexasHoldemGame extends Game {
     }
 
     private int getNumberOfCurrentPlayers(){
-        List<Player> activePlayers = players.stream().filter(player ->
+        List<THPlayer> activePlayers = players.stream().filter(player ->
                 !folded.contains(player)).toList();
 
         return activePlayers.size();

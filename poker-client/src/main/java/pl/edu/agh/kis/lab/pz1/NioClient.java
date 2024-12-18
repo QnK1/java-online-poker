@@ -16,7 +16,7 @@ public class NioClient {
             while(true) {
                 var line = scanner.nextLine();
 
-                if(line.equalsIgnoreCase("quit")) {
+                if(line.toLowerCase().contains("quit")) {
                     break;
                 }
                 line += System.lineSeparator();

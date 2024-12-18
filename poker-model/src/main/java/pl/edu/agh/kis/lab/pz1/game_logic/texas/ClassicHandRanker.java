@@ -7,7 +7,7 @@ import java.util.*;
 public class ClassicHandRanker implements HandRanker {
 
     @Override
-    public List<Player> pickWinner(List<Player> players, CommunityCards communityCards){
+    public List<THPlayer> pickWinner(List<THPlayer> players, CommunityCards communityCards){
         var playerCards = players.stream().map(p -> {
                     List<Card> cards = new ArrayList<>();
                     cards.addAll(p.getHand().getCards());
@@ -24,7 +24,7 @@ public class ClassicHandRanker implements HandRanker {
 
         playerCombos.sort((pc1, pc2) -> pc2.getValue1().compareTo(pc1.getValue1()));
 
-        List<Player> winners = new ArrayList<>();
+        List<THPlayer> winners = new ArrayList<>();
         winners.add(playerCombos.get(0).getValue0());
 
         for(var pc : playerCombos.subList(1, playerCombos.size())) {
