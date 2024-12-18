@@ -1,13 +1,24 @@
 package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 
-
 import pl.edu.agh.kis.lab.pz1.game_exceptions.IncorrectCardComboException;
 
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents a combination of cards with a specific type and tie-breaker cards.
+ * This class is immutable and implements {@link Comparable} to allow comparison based on combo type and tie-breakers.
+ *
+ * @param comboType       the type of card combination (e.g., FULL_HOUSE, STRAIGHT, etc.)
+ * @param cards           the list of cards forming the combination
+ * @param tieBreakerCards the list of cards used to break ties between combinations of the same type
+ */
 public record CardCombo(ComboType comboType, List<Card> cards,
                         List<Card> tieBreakerCards) implements Comparable<CardCombo> {
+
+    /**
+     * A map defining the number of tie-breaker cards required for each combo type.
+     */
     static Map<ComboType, Integer> tiebreakerNumbers;
 
     static {
@@ -24,13 +35,23 @@ public record CardCombo(ComboType comboType, List<Card> cards,
         );
     }
 
+    /**
+     * Constructs a new {@code CardCombo} instance.
+     *
+     * @throws IncorrectCardComboException if the number of cards or tie-breaker cards does not match the expected values for the combo type
+     */
     public CardCombo {
         if (cards.size() != 5 || tieBreakerCards.size() != tiebreakerNumbers.get(comboType)) {
             throw new IncorrectCardComboException("Card combo doesn't have correct number of tiebreakers");
         }
-
     }
 
+    /**
+     * Compares this card combination with another based on combo type and tie-breaker cards.
+     *
+     * @param o the other card combination to compare to
+     * @return a positive integer if this combination is greater, a negative integer if it is less, or zero if they are equal
+     */
     @Override
     public int compareTo(CardCombo o) {
         if (this.comboType.ordinal() > o.comboType.ordinal()) {
@@ -47,6 +68,5 @@ public record CardCombo(ComboType comboType, List<Card> cards,
             }
             return 0;
         }
-
     }
 }

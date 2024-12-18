@@ -34,7 +34,7 @@ public class NioClient {
                 }
             }
         } catch(IOException e){
-            throw new RuntimeException(e);
+            throw new FailedToEstablishServerConnectionException("Failed to connect to server.", e);
         }
     }
 }

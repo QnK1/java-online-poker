@@ -4,10 +4,21 @@ import org.javatuples.Pair;
 
 import java.util.*;
 
+/**
+ * Implements the HandRanker interface to determine the winner(s) of a Texas Hold'em poker game
+ * based on players' hands and community cards. Also includes methods for identifying specific card combinations.
+ */
 public class ClassicHandRanker implements HandRanker {
 
+    /**
+     * Determines the winner(s) of the game by evaluating the players' hands combined with the community cards.
+     *
+     * @param players         the list of players in the game
+     * @param communityCards  the community cards visible on the table
+     * @return a list of players who have the best hand
+     */
     @Override
-    public List<THPlayer> pickWinner(List<THPlayer> players, CommunityCards communityCards){
+    public List<THPlayer> pickWinner(List<THPlayer> players, CommunityCards communityCards) {
         var playerCards = players.stream().map(p -> {
                     List<Card> cards = new ArrayList<>();
                     cards.addAll(p.getHand().getCards());
@@ -27,8 +38,8 @@ public class ClassicHandRanker implements HandRanker {
         List<THPlayer> winners = new ArrayList<>();
         winners.add(playerCombos.get(0).getValue0());
 
-        for(var pc : playerCombos.subList(1, playerCombos.size())) {
-            if(pc.getValue1().compareTo(playerCombos.get(0).getValue1()) == 0){
+        for (var pc : playerCombos.subList(1, playerCombos.size())) {
+            if (pc.getValue1().compareTo(playerCombos.get(0).getValue1()) == 0) {
                 winners.add(pc.getValue0());
             }
         }
@@ -36,55 +47,66 @@ public class ClassicHandRanker implements HandRanker {
         return winners;
     }
 
-    public CardCombo findComboFromHand(List<Card> cards){
+    /**
+     * Identifies the best card combination (hand) from a given list of cards.
+     *
+     * @param cards the list of cards to evaluate
+     * @return the best card combination found
+     */
+    public CardCombo findComboFromHand(List<Card> cards) {
         CardCombo combo = findStraightFlush(cards);
 
-        if(combo == null){
+        if (combo == null) {
             combo = findFourOfAKind(cards);
         }
 
-        if(combo == null){
+        if (combo == null) {
             combo = findFullHouse(cards);
         }
 
-        if(combo == null){
+        if (combo == null) {
             combo = findFlush(cards);
         }
 
-        if(combo == null){
+        if (combo == null) {
             combo = findStraight(cards);
         }
 
-        if(combo == null){
+        if (combo == null) {
             combo = findThreeOfAKind(cards);
         }
 
-        if(combo == null){
+        if (combo == null) {
             combo = findTwoPairs(cards);
         }
 
-        if(combo == null){
+        if (combo == null) {
             combo = findPair(cards);
         }
 
-        if(combo == null){
+        if (combo == null) {
             combo = findHighCard(cards);
         }
 
         return combo;
     }
 
-    private CardCombo findStraightFlush(List<Card> cards){
+    /**
+     * Finds a straight flush combination from a given list of cards.
+     *
+     * @param cards the list of cards to evaluate
+     * @return a {@code CardCombo} representing a straight flush, or null if none is found
+     */
+    private CardCombo findStraightFlush(List<Card> cards) {
         List<Card> sortedCards = cards.stream().sorted(Comparator.reverseOrder()).toList();
         Map<Card.Suit, Integer> suitCounts = new EnumMap<>(Card.Suit.class);
         Card.Suit topSuit = null;
         List<Card> cardsFound = new ArrayList<>();
 
-
-        for(Card card : sortedCards){
+        for (Card card : sortedCards) {
             suitCounts.put(card.suit(), suitCounts.getOrDefault(card.suit(), 0) + 1);
 
-            if(suitCounts.get(card.suit()) >= 5){
+            if (suitCounts.get(card.suit()) >= 5) {
                 topSuit = card.suit();
             }
         }
@@ -112,25 +134,31 @@ public class ClassicHandRanker implements HandRanker {
         ) : null;
     }
 
-    private CardCombo findFourOfAKind(List<Card> cards){
+    /**
+     * Finds a four-of-a-kind combination from a given list of cards.
+     *
+     * @param cards the list of cards to evaluate
+     * @return a {@code CardCombo} representing four of a kind, or null if none is found
+     */
+    private CardCombo findFourOfAKind(List<Card> cards) {
         List<Card> sortedCards = cards.stream().sorted(Comparator.reverseOrder()).toList();
         Map<Card.Rank, List<Card>> rankCards = new EnumMap<>(Card.Rank.class);
         List<Card> bestCards = new ArrayList<>();
 
-        for(var card : sortedCards){
+        for (var card : sortedCards) {
             rankCards.putIfAbsent(card.rank(), new ArrayList<>());
             rankCards.get(card.rank()).add(card);
 
-            if(rankCards.get(card.rank()).size() == 4){
+            if (rankCards.get(card.rank()).size() == 4) {
                 bestCards.add(card);
             }
         }
 
         List<Card> hand = new ArrayList<>();
 
-        if(!bestCards.isEmpty()){
-            for(var card : sortedCards){
-                if(card.rank() != bestCards.get(0).rank()){
+        if (!bestCards.isEmpty()) {
+            for (var card : sortedCards) {
+                if (card.rank() != bestCards.get(0).rank()) {
                     bestCards.add(card);
 
                     hand.addAll(rankCards.get(bestCards.get(0).rank()));
@@ -141,8 +169,6 @@ public class ClassicHandRanker implements HandRanker {
             }
         }
 
-
-
         return bestCards.isEmpty() ? null : new CardCombo(
                 ComboType.FOUR_OF_A_KIND,
                 new ArrayList<>(hand),
@@ -151,20 +177,25 @@ public class ClassicHandRanker implements HandRanker {
 
     }
 
-    private CardCombo findFullHouse(List<Card> cards){
+    /**
+     * Finds a full house combination from a given list of cards.
+     *
+     * @param cards the list of cards to evaluate
+     * @return a {@code CardCombo} representing a full house, or null if none is found
+     */
+    private CardCombo findFullHouse(List<Card> cards) {
         List<Card> sortedCards = cards.stream().sorted(Comparator.reverseOrder()).toList();
         Map<Card.Rank, List<Card>> rankCards = new EnumMap<>(Card.Rank.class);
         Card.Rank threeRank = null;
         Card.Rank twoRank = null;
 
-        for(var card : sortedCards){
+        for (var card : sortedCards) {
             rankCards.putIfAbsent(card.rank(), new ArrayList<>());
             rankCards.get(card.rank()).add(card);
 
-            if(threeRank == null && rankCards.get(card.rank()).size() == 3){
+            if (threeRank == null && rankCards.get(card.rank()).size() == 3) {
                 threeRank = card.rank();
-            }
-            else if(threeRank != null && twoRank == null && rankCards.get(card.rank()).size() == 2){
+            } else if (threeRank != null && twoRank == null && rankCards.get(card.rank()).size() == 2) {
                 twoRank = card.rank();
             }
         }
@@ -172,15 +203,13 @@ public class ClassicHandRanker implements HandRanker {
         List<Card> hand = new ArrayList<>();
         List<Card> tiebreakers = new ArrayList<>();
 
-        if(twoRank != null){
+        if (twoRank != null) {
             hand.addAll(rankCards.get(threeRank).subList(0, 3));
             hand.addAll(rankCards.get(twoRank).subList(0, 2));
 
             tiebreakers.add(rankCards.get(threeRank).get(0));
             tiebreakers.add(rankCards.get(twoRank).get(0));
         }
-
-
 
         return twoRank != null ? new CardCombo(
                 ComboType.FULL_HOUSE,
@@ -189,6 +218,12 @@ public class ClassicHandRanker implements HandRanker {
         ) : null;
     }
 
+    /**
+     * Finds a flush combination from a given list of cards.
+     *
+     * @param cards the list of cards to evaluate
+     * @return a {@code CardCombo} representing a flush, or null if none is found
+     */
     private CardCombo findFlush(List<Card> cards){
         List<Card> sortedCards = cards.stream().sorted(Comparator.reverseOrder()).toList();
         Map<Card.Suit, List<Card>> suitCards = new EnumMap<>(Card.Suit.class);
@@ -217,6 +252,13 @@ public class ClassicHandRanker implements HandRanker {
         ) : null;
     }
 
+    /**
+     * Finds a straight in the given list of cards.
+     * A straight is a hand where the cards have consecutive ranks.
+     *
+     * @param cards The list of cards to evaluate.
+     * @return A CardCombo representing the straight, or null if no straight is found.
+     */
     private CardCombo findStraight(List<Card> cards){
         List<Card> sortedCards = cards.stream().sorted(Comparator.reverseOrder()).toList();
         List<Card> hand = new ArrayList<>();
@@ -244,6 +286,13 @@ public class ClassicHandRanker implements HandRanker {
         ) : null;
     }
 
+    /**
+     * Finds a three of a kind in the given list of cards.
+     * A three of a kind is a hand where three cards have the same rank.
+     *
+     * @param cards The list of cards to evaluate.
+     * @return A CardCombo representing the three of a kind, or null if no three of a kind is found.
+     */
     private CardCombo findThreeOfAKind(List<Card> cards){
         List<Card> sortedCards = cards.stream().sorted(Comparator.reverseOrder()).toList();
         Map<Card.Rank, List<Card>> rankCards = new EnumMap<>(Card.Rank.class);
@@ -281,6 +330,13 @@ public class ClassicHandRanker implements HandRanker {
 
     }
 
+    /**
+     * Finds two pairs in the given list of cards.
+     * Two pairs are hands where two separate ranks each have two cards.
+     *
+     * @param cards The list of cards to evaluate.
+     * @return A CardCombo representing the two pairs, or null if no two pairs are found.
+     */
     private CardCombo findTwoPairs(List<Card> cards){
         List<Card> sortedCards = cards.stream().sorted(Comparator.reverseOrder()).toList();
         Map<Card.Rank, List<Card>> rankCards = new EnumMap<>(Card.Rank.class);
@@ -328,6 +384,13 @@ public class ClassicHandRanker implements HandRanker {
         ) : null;
     }
 
+    /**
+     * Finds a pair in the given list of cards.
+     * A pair is a hand where two cards have the same rank.
+     *
+     * @param cards The list of cards to evaluate.
+     * @return A CardCombo representing the pair, or null if no pair is found.
+     */
     private CardCombo findPair(List<Card> cards){
         List<Card> sortedCards = cards.stream().sorted(Comparator.reverseOrder()).toList();
         Map<Card.Rank, List<Card>> rankCards = new EnumMap<>(Card.Rank.class);
@@ -367,6 +430,13 @@ public class ClassicHandRanker implements HandRanker {
 
     }
 
+    /**
+     * Finds the highest card in the given list of cards.
+     * The highest card is the card with the highest rank in the hand.
+     *
+     * @param cards The list of cards to evaluate.
+     * @return A CardCombo representing the high card hand.
+     */
     private CardCombo findHighCard(List<Card> cards){
         List<Card> sortedCards = cards.stream().sorted(Comparator.reverseOrder()).toList();
         List<Card> hand = new ArrayList<>();
