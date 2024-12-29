@@ -44,6 +44,8 @@ public class TexasHoldemGame extends Game {
     private final Map<String, Action> allowedCommands; // Map of command strings to corresponding actions
     boolean newWinnerFound;                  // Flag indicating whether a new winner was found
 
+
+
     /**
      * Constructs a TexasHoldemGame with the specified parameters.
      *
@@ -204,7 +206,7 @@ public class TexasHoldemGame extends Game {
      * @return The player object if found, null otherwise.
      */
     private THPlayer getPlayerByName(String name) {
-        for (THPlayer player : players) {
+        for (var player : players) {
             if (player.getName().equals(name)) {
                 return player;
             }
@@ -390,7 +392,7 @@ public class TexasHoldemGame extends Game {
         int maxBet = 0;
         List<THPlayer> currentPlayers = players.stream().filter(player ->
                 !folded.contains(player)).toList();
-        for(THPlayer player : currentPlayers){
+        for(var player : currentPlayers){
             maxBet = Math.max(maxBet, player.getCurrentBet());
         }
 
@@ -468,7 +470,7 @@ public class TexasHoldemGame extends Game {
             List<THPlayer> winners = getWinners();
             int nOfWinners = winners.size();
 
-            for(THPlayer winner : winners){
+            for(var winner : winners){
                 winner.setMoney(winner.getMoney() + currentPot / nOfWinners);
             }
 
@@ -608,13 +610,4 @@ public class TexasHoldemGame extends Game {
         return activePlayers.size();
     }
 
-    /**
-     * Returns the name of the game.
-     *
-     * @return the name of the game
-     */
-    @Override
-    public String getName(){
-        return "TEXAS HOLDEM";
-    }
 }

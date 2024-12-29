@@ -1,6 +1,7 @@
 package pl.edu.agh.kis.lab.pz1.game_logic.texas;
 
 import org.javatuples.Pair;
+import pl.edu.agh.kis.lab.pz1.game_logic.Player;
 
 import java.util.*;
 

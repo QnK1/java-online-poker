@@ -87,11 +87,11 @@ public class TexasHoldemGameTest {
         players.add(player2);
         TexasHoldemGame game = new TexasHoldemGame(players, 100, 2);
         game.startGame();
-        var activePlayerIndex = game.getActivePlayerIndex();
+        var activeTHPlayerIndex = game.getActivePlayerIndex();
 
-        assertEquals("Bob", game.getPlayers().get(activePlayerIndex).getName());
+        assertEquals("Bob", game.getPlayers().get(activeTHPlayerIndex).getName());
         assertFalse(game.isGameOver());
-        game.act(players.get(activePlayerIndex), Action.LEAVE_GAME, 0);
+        game.act(players.get(activeTHPlayerIndex), Action.LEAVE_GAME, 0);
         assertTrue(game.isGameOver());
     }
 
@@ -246,17 +246,5 @@ public class TexasHoldemGameTest {
         var wonPot = game.getLastWin();
         assertTrue(wonPot == 38 || wonPot == 19);
 
-    }
-
-    @Test
-    public void nameTest() {
-        List<THPlayer> players = new ArrayList<THPlayer>();
-        players.add(new THPlayer());
-        players.add(new THPlayer());
-        players.add(new THPlayer());
-
-        TexasHoldemGame game = new TexasHoldemGame(players, 3, 1);
-        var name = game.getName();
-        assertNotNull(name);
     }
 }

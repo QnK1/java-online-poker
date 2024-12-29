@@ -14,13 +14,6 @@ public abstract class Game {
     public abstract void startGame();
 
     /**
-     * Retrieves the name of the game.
-     *
-     * @return The name of the game as a String.
-     */
-    public abstract String getName();
-
-    /**
      * Executes a command from a player. This method must be implemented by subclasses
      * to define how commands are processed during the game.
      *

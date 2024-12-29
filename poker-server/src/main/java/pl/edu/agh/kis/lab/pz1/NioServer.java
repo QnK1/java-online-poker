@@ -1,6 +1,6 @@
 package pl.edu.agh.kis.lab.pz1;
 
-import pl.edu.agh.kis.lab.pz1.game_logic.texas.THPlayer;
+import pl.edu.agh.kis.lab.pz1.game_logic.Player;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -12,18 +12,18 @@ import java.nio.channels.SocketChannel;
 import java.util.*;
 
 /**
- * A server class for handling multiple clients using non-blocking I/O (NIO) for a Texas Hold'em game lobby system.
+ * A server class for handling multiple clients using non-blocking I/O (NIO) for a game lobby system.
  * It manages client connections, their associated players, and game lobbies.
  */
 public class NioServer {
-    /** A map of socket channels to TexasHoldemLobby instances, representing clients currently in a lobby. */
-    private final Map<SocketChannel, TexasHoldemLobby> clientsInLobby;
+    /** A map of socket channels to Lobby instances, representing clients currently in a lobby. */
+    private final Map<SocketChannel, Lobby> clientsInLobby;
 
-    /** A map of lobby IDs to TexasHoldemLobby instances, representing the game lobbies by their unique identifiers. */
-    private final Map<String, TexasHoldemLobby> lobbyIds;
+    /** A map of lobby IDs to Lobby instances, representing the game lobbies by their unique identifiers. */
+    private final Map<String, Lobby> lobbyIds;
 
-    /** A map of socket channels to THPlayer instances, representing the players associated with each client. */
-    private final Map<SocketChannel, THPlayer> clientPlayers;
+    /** A map of socket channels to Player instances, representing the players associated with each client. */
+    private final Map<SocketChannel, Player> clientPlayers;
 
     /**
      * Initializes a new NioServer instance with empty maps for managing clients, lobbies, and players.
@@ -87,20 +87,24 @@ public class NioServer {
                                 buffer.clear();
 
                                 if(!clientsInLobby.containsKey(client)){
-                                    if(args.size() == 3
+                                    if(args.size() == 4
                                             && args.get(0).equals("create")
-                                            && !args.get(1).isEmpty() && !lobbyIds.containsKey(args.get(1)) &&
-                                            !args.get(2).isEmpty()){
-                                        var lobby = new TexasHoldemLobby();
+                                            && !args.get(1).isEmpty()
+                                            && !args.get(2).isEmpty() && !lobbyIds.containsKey(args.get(2)) &&
+                                            !args.get(3).isEmpty()
+                                            && (new LobbyFactory()).getGameNames().contains(args.get(1))){
 
-                                        lobbyIds.put(args.get(1), lobby);
+                                        LobbyFactory lobbyFactory = new LobbyFactory();
+                                        var lobby = lobbyFactory.getLobby(args.get(1));
+
+                                        lobbyIds.put(args.get(2), lobby);
                                         clientsInLobby.put(client, lobby);
-                                        THPlayer player = new THPlayer();
-                                        player.setName(args.get(2));
+                                        Player player = lobby.getNewPLayerInstance();
+                                        player.setName(args.get(3));
                                         clientPlayers.put(client, player);
                                         lobby.addPlayer(player);
 
-                                        buffer.put(("lobby " + args.get(1) + " created").getBytes());
+                                        buffer.put(("lobby " + args.get(2) + " created").getBytes());
                                         buffer.flip();
                                         while(buffer.hasRemaining()){
                                             client.write(buffer);
@@ -112,7 +116,7 @@ public class NioServer {
                                                     !args.get(2).isEmpty()){
                                         var lobby = lobbyIds.get(args.get(1));
                                         clientsInLobby.put(client, lobby);
-                                        THPlayer player = new THPlayer();
+                                        Player player = lobby.getNewPLayerInstance();
                                         player.setName(args.get(2));
                                         clientPlayers.put(client, player);
                                         lobby.addPlayer(player);
@@ -205,15 +209,15 @@ public class NioServer {
     }
 
     /**
-     * Retrieves information about the last winner in the given TexasHoldemLobby.
+     * Retrieves information about the last winner in the given Lobby.
      * The method checks if a new winner has been found and, if so, returns the winner's name,
      * the amount they won, and the cards they used to win.
      *
-     * @param lobby The TexasHoldemLobby to retrieve the winner data from.
+     * @param lobby The Lobby to retrieve the winner data from.
      * @return A string containing the winner's name, the amount they won, and the cards used to win.
      *         If no winner is found, an empty string is returned.
      */
-    private static String getString(TexasHoldemLobby lobby) {
+    private static String getString(Lobby lobby) {
         String winData = "";
         if(lobby.game.isNewWinnerFound()){
             String lastWinner = lobby.game.getLastWinnerNames().get(0);
@@ -234,11 +238,22 @@ public class NioServer {
      * @throws BufferWritingException If there is an error while writing the welcome message to the client.
      */
     private void sendWelcomeMessage(SocketChannel client){
+        LobbyFactory lobbyFactory = new LobbyFactory();
+        List<String> gameNames = lobbyFactory.getGameNames();
+
         StringBuilder sb = new StringBuilder();
         sb.append("Available commands:\n");
 
         sb.append("\t").append("create").append("\n");
         sb.append("\t").append("join").append("\n");
+        sb.append("\n");
+
+        sb.append("Available games:\n");
+
+        for(String gameName : gameNames){
+            sb.append("\t").append(gameName).append("\n");
+        }
+
 
 
         ByteBuffer buffer = ByteBuffer.allocate(1024);
