@@ -247,4 +247,66 @@ public class TexasHoldemGameTest {
         assertTrue(wonPot == 38 || wonPot == 19);
 
     }
+
+    @Test
+    public void checkCommandTest(){
+        List<THPlayer> players = new ArrayList<>();
+        var player1 = new THPlayer();
+        var player2 = new THPlayer();
+        player1.setName("Joe");
+        player2.setName("Bob");
+        players.add(player1);
+        players.add(player2);
+        TexasHoldemGame game = new TexasHoldemGame(players, 100, 2);
+        game.startGame();
+
+        int activeIndex = game.getActivePlayerIndex();
+        assertFalse(game.executeCommand(players.get(game.getActivePlayerIndex()), "CHECK"));
+        assertFalse(game.executeCommand(players.get(game.getActivePlayerIndex()), "sdgdsg"));
+        assertEquals(game.getActivePlayerIndex(), activeIndex);
+
+        assertTrue(game.executeCommand(players.get(game.getActivePlayerIndex()), "RAISE 10"));
+        assertEquals(TexasHoldemGame.GamePhase.PRE_FLOP, game.getGamePhase());
+        assertFalse(game.isGameOver());
+        assertTrue(game.executeCommand(players.get(game.getActivePlayerIndex()), "RAISE 11"));
+        assertEquals(TexasHoldemGame.GamePhase.PRE_FLOP, game.getGamePhase());
+        assertTrue(game.executeCommand(players.get(game.getActivePlayerIndex()), "CALL"));
+
+        assertEquals(TexasHoldemGame.GamePhase.FLOP, game.getGamePhase());
+        assertTrue(game.act(players.get(game.getActivePlayerIndex()), Action.CHECK, 0));
+        assertTrue(game.act(players.get(game.getActivePlayerIndex()), Action.RAISE, 1));
+        assertTrue(game.act(players.get(game.getActivePlayerIndex()), Action.CALL, 0));
+
+        assertEquals(TexasHoldemGame.GamePhase.TURN, game.getGamePhase());
+        assertEquals(16, players.get(0).getCurrentBet());
+        assertEquals(4, game.getCommunityCards().getVisibleCards().size());
+        assertTrue(game.act(players.get(game.getActivePlayerIndex()), Action.CHECK, 0));
+        assertTrue(game.act(players.get(game.getActivePlayerIndex()), Action.RAISE, 1));
+        assertTrue(game.act(players.get(game.getActivePlayerIndex()), Action.CALL, 0));
+
+        assertEquals(TexasHoldemGame.GamePhase.RIVER, game.getGamePhase());
+        assertTrue(game.act(players.get(game.getActivePlayerIndex()), Action.RAISE, 1));
+        assertTrue(game.act(players.get(game.getActivePlayerIndex()), Action.RAISE, 2));
+        assertTrue(game.act(players.get(game.getActivePlayerIndex()), Action.CALL, 0));
+
+        var wonPot = game.getLastWin();
+        assertTrue(wonPot == 38 || wonPot == 19);
+
+    }
+
+    @Test
+    public void getGameStateTest(){
+        List<THPlayer> players = new ArrayList<>();
+        var player1 = new THPlayer();
+        var player2 = new THPlayer();
+        player1.setName("Joe");
+        player2.setName("Bob");
+        players.add(player1);
+        players.add(player2);
+        TexasHoldemGame game = new TexasHoldemGame(players, 100, 2);
+        game.startGame();
+        assertTrue(game.executeCommand(players.get(game.getActivePlayerIndex()), "CALL"));
+        assertTrue(game.getGameState(players.get(game.getActivePlayerIndex()).getName()).contains("active"));
+        assertTrue(game.getGameState(players.get(game.getActivePlayerIndex()).getName()).contains("Table"));
+    }
 }

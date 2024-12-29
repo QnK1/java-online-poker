@@ -22,7 +22,7 @@ public class LobbyFactory {
                 Constructor<? extends Lobby> constructor = lobby.getDeclaredConstructor();
                 Lobby instance = constructor.newInstance();
 
-                lobbies.put(instance.getGameName(), constructor);
+                lobbies.put(instance.getGameName().replace("Game", ""), constructor);
             } catch (Exception e) {
                 throw new FailedToLoadChildClassesException("Loading child classes of Lobby failed", e);
             }

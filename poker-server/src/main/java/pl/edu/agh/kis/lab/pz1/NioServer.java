@@ -49,7 +49,6 @@ public class NioServer {
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.bind(new InetSocketAddress(portNumber));
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            ByteBuffer buffer = ByteBuffer.allocate(1024);
 
             while(true){
                 if(selector.select() == 0){
@@ -59,131 +58,13 @@ public class NioServer {
                 for(SelectionKey key : selector.selectedKeys()){
                     if(key.isAcceptable()){
                         if(key.channel() instanceof ServerSocketChannel channel){
-                            var client = channel.accept();
-                            var socket = client.socket();
-                            var clientInfo = socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
-                            System.out.println("CLIENT CONNECTED: " + clientInfo);
-                            client.configureBlocking(false);
-                            client.register(selector, SelectionKey.OP_READ);
-                            clients.add(client);
+                            connectClient(channel, selector, clients);
                         } else {
                             throw new UnknownChannelException("Unknown channel: " + key.channel());
                         }
                     } else if(key.isReadable()){
                         if(key.channel() instanceof SocketChannel client){
-                            buffer = ByteBuffer.allocate(1024);
-                            var bytesRead = client.read(buffer);
-                            if(bytesRead == -1){
-                                var socket = client.socket();
-                                var clientInfo = socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
-                                System.out.println("CLIENT DISCONNECTED: " + clientInfo);
-                                client.close();
-                                clients.remove(client);
-
-                            }else{
-                                buffer.flip();
-                                var data = new String(buffer.array(), buffer.position(), bytesRead);
-                                var args = Arrays.asList(data.strip().split(" "));
-                                buffer.clear();
-
-                                if(!clientsInLobby.containsKey(client)){
-                                    if(args.size() == 4
-                                            && args.get(0).equals("create")
-                                            && !args.get(1).isEmpty()
-                                            && !args.get(2).isEmpty() && !lobbyIds.containsKey(args.get(2)) &&
-                                            !args.get(3).isEmpty()
-                                            && (new LobbyFactory()).getGameNames().contains(args.get(1))){
-
-                                        LobbyFactory lobbyFactory = new LobbyFactory();
-                                        var lobby = lobbyFactory.getLobby(args.get(1));
-
-                                        lobbyIds.put(args.get(2), lobby);
-                                        clientsInLobby.put(client, lobby);
-                                        Player player = lobby.getNewPLayerInstance();
-                                        player.setName(args.get(3));
-                                        clientPlayers.put(client, player);
-                                        lobby.addPlayer(player);
-
-                                        buffer.put(("lobby " + args.get(2) + " created").getBytes());
-                                        buffer.flip();
-                                        while(buffer.hasRemaining()){
-                                            client.write(buffer);
-                                        }
-                                        buffer.clear();
-                                    } else if(
-                                            args.size() == 3 && args.get(0).equals("join")
-                                                    && !args.get(1).isEmpty() && lobbyIds.containsKey(args.get(1)) &&
-                                                    !args.get(2).isEmpty()){
-                                        var lobby = lobbyIds.get(args.get(1));
-                                        clientsInLobby.put(client, lobby);
-                                        Player player = lobby.getNewPLayerInstance();
-                                        player.setName(args.get(2));
-                                        clientPlayers.put(client, player);
-                                        lobby.addPlayer(player);
-
-                                        buffer.put(("game " + args.get(1) + " joined").getBytes());
-                                        buffer.flip();
-                                        while(buffer.hasRemaining()){
-                                            client.write(buffer);
-                                        }
-                                        buffer.clear();
-
-                                    }
-                                } else {
-                                    var lobby = clientsInLobby.get(client);
-                                    var player = clientPlayers.get(client);
-                                    if(lobby.isStarted()){
-                                        String message;
-
-                                        boolean commandSuccess = lobby.game.executeCommand(player, data);
-
-                                        if(commandSuccess && data.strip().split(" ")[0].equals("LEAVE")
-                                                || lobby.game.isGameOver()){
-                                            clientPlayers.remove(client);
-                                            clientsInLobby.remove(client);
-
-                                        }
-
-                                        if(commandSuccess){
-                                            message = "\nCOMMAND SUCCESSFUL";
-                                        }else{
-                                            message = "\nENTER VALID COMMAND";
-                                        }
-                                        String winData = getString(lobby);
-                                        String gameData = lobby.getGame().getGameState(player.getName()) + message +
-                                                winData;
-
-                                        buffer.put(gameData.getBytes());
-                                        buffer.flip();
-                                        while(buffer.hasRemaining()){
-                                            client.write(buffer);
-                                        }
-                                    } else {
-                                        if(args.size() == 1 && args.get(0).equals("start") &&
-                                                lobby.getPlayers().size() >= 2){
-                                            lobby.createGame();
-                                            buffer.put("GAME STARTED".getBytes());
-                                            buffer.flip();
-                                            while(buffer.hasRemaining()){
-                                                client.write(buffer);
-                                            }
-                                            buffer.clear();
-                                        } else {
-                                            buffer.put("TYPE START TO START".getBytes());
-                                            buffer.flip();
-                                            while(buffer.hasRemaining()){
-                                                client.write(buffer);
-                                            }
-                                            buffer.clear();
-                                        }
-                                    }
-                                }
-
-                                if(!clientsInLobby.containsKey(client)){
-                                    sendWelcomeMessage(client);
-                                }
-                            }
-                            buffer.clear();
+                            serveClient(client, clients);
 
 
                         } else {
@@ -206,6 +87,137 @@ public class NioServer {
             throw new FailedToStartServerException("Error while establishing server connection.", e);
 
         }
+    }
+
+    private void serveClient(SocketChannel client, HashSet<SocketChannel> clients) throws IOException {
+        ByteBuffer buffer;
+        buffer = ByteBuffer.allocate(1024);
+        var bytesRead = client.read(buffer);
+        if(bytesRead == -1){
+            var socket = client.socket();
+            var clientInfo = socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
+            System.out.println("CLIENT DISCONNECTED: " + clientInfo);
+            client.close();
+            clients.remove(client);
+
+        }else{
+            buffer.flip();
+            var data = new String(buffer.array(), buffer.position(), bytesRead);
+            var args = Arrays.asList(data.strip().split(" "));
+            buffer.clear();
+
+            if(!clientsInLobby.containsKey(client)){
+                handleJoinCreate(client, args, buffer);
+            } else {
+                handleInGameCommand(client, data, buffer, args);
+            }
+
+            if(!clientsInLobby.containsKey(client)){
+                sendWelcomeMessage(client);
+            }
+        }
+        buffer.clear();
+    }
+
+    private void handleInGameCommand(SocketChannel client, String data, ByteBuffer buffer, List<String> args) throws IOException {
+        var lobby = clientsInLobby.get(client);
+        var player = clientPlayers.get(client);
+        if(lobby.isStarted()){
+            String message;
+
+            boolean commandSuccess = lobby.game.executeCommand(player, data);
+
+            if(commandSuccess && data.strip().split(" ")[0].equals("LEAVE")
+                    || lobby.game.isGameOver()){
+                clientPlayers.remove(client);
+                clientsInLobby.remove(client);
+
+            }
+
+            message = commandSuccess ? "\nCOMMAND SUCCESSFUL" : "\nENTER VALID COMMAND";
+
+            String winData = getString(lobby);
+            String gameData = lobby.getGame().getGameState(player.getName()) + message +
+                    winData;
+
+            buffer.put(gameData.getBytes());
+            buffer.flip();
+            while(buffer.hasRemaining()){
+                client.write(buffer);
+            }
+        } else {
+            handleGameStart(client, buffer, args, lobby);
+        }
+    }
+
+    private static void handleGameStart(SocketChannel client, ByteBuffer buffer, List<String> args, Lobby lobby) throws IOException {
+        if(args.size() == 1 && args.get(0).equals("start") &&
+                lobby.getPlayers().size() >= 2){
+            lobby.createGame();
+            buffer.put("GAME STARTED".getBytes());
+        } else {
+            buffer.put("TYPE START TO START".getBytes());
+        }
+        buffer.flip();
+        while(buffer.hasRemaining()){
+            client.write(buffer);
+        }
+        buffer.clear();
+    }
+
+    private void handleJoinCreate(SocketChannel client, List<String> args, ByteBuffer buffer) throws IOException {
+        if(args.size() == 4
+                && args.get(0).equals("create")
+                && !args.get(1).isEmpty()
+                && !args.get(2).isEmpty() && !lobbyIds.containsKey(args.get(2)) &&
+                !args.get(3).isEmpty()
+                && (new LobbyFactory()).getGameNames().contains(args.get(1))){
+
+            LobbyFactory lobbyFactory = new LobbyFactory();
+            var lobby = lobbyFactory.getLobby(args.get(1));
+
+            lobbyIds.put(args.get(2), lobby);
+            clientsInLobby.put(client, lobby);
+            Player player = lobby.getNewPLayerInstance();
+            player.setName(args.get(3));
+            clientPlayers.put(client, player);
+            lobby.addPlayer(player);
+
+            buffer.put(("lobby " + args.get(2) + " created").getBytes());
+            buffer.flip();
+            while(buffer.hasRemaining()){
+                client.write(buffer);
+            }
+            buffer.clear();
+        } else if(
+                args.size() == 3 && args.get(0).equals("join")
+                        && !args.get(1).isEmpty() && lobbyIds.containsKey(args.get(1)) &&
+                        !args.get(2).isEmpty()){
+            var lobby = lobbyIds.get(args.get(1));
+            clientsInLobby.put(client, lobby);
+            Player player = lobby.getNewPLayerInstance();
+            player.setName(args.get(2));
+            clientPlayers.put(client, player);
+            lobby.addPlayer(player);
+
+            buffer.put(("game " + args.get(1) + " joined").getBytes());
+            buffer.flip();
+            while(buffer.hasRemaining()){
+                client.write(buffer);
+            }
+            buffer.clear();
+
+        }
+    }
+
+    private static void connectClient(ServerSocketChannel channel, Selector selector, HashSet<SocketChannel> clients) throws IOException {
+        var client = channel.accept();
+        var socket = client.socket();
+        var clientInfo = socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
+        System.out.println("CLIENT CONNECTED: " + clientInfo);
+        client.configureBlocking(false);
+        client.register(selector, SelectionKey.OP_READ);
+        clients.add(client);
     }
 
     /**
